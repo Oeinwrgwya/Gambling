@@ -1,4 +1,4 @@
-import { HIT_INVULNERABILITY_MS } from "../config.js";
+import { HIT_INVULNERABILITY_MS } from "./config.js";
 
 // Bazowa klasa kulki. Gracz i wrogowie korzystają z tej samej klasy -
 // jedyna różnica to kto steruje ruchem (zobacz PlayerBall.js).
