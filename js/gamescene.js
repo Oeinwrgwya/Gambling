@@ -1,4 +1,4 @@
-import { Ball } from "../entities/Ball.js";
+import { Ball } from "./ball.js";
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -6,7 +6,7 @@ import {
   BALL_COUNT,
   BALL_RADIUS,
   BALL_STATS_RANGE,
-} from "../config.js";
+} from "./config.js";
 
 const BALL_COLORS = [
   0x4ade80, 0xf87171, 0x60a5fa, 0xfacc15, 0xc084fc, 0xfb923c, 0x2dd4bf, 0xf472b6,
