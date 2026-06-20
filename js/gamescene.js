@@ -24,10 +24,10 @@ export class GameScene extends Phaser.Scene {
     this.drawArenaBorder();
     this.spawnBalls();
 
-    this.ballGroup = this.physics.add.group(this.balls.map((b) => b.sprite));
+    this.ballSprites = this.balls.map((b) => b.sprite);
     this.physics.add.collider(
-      this.ballGroup,
-      this.ballGroup,
+      this.ballSprites,
+      this.ballSprites,
       this.onBallCollide,
       null,
       this
