@@ -1,4 +1,4 @@
-import { GameScene } from "./scenes/GameScene.js";
+import { GameScene } from "./gamescene.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "./config.js";
 
 const config = {
