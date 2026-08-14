@@ -144,30 +144,6 @@
     border-radius:6px;
     cursor:pointer;
   }
-
-  .log-title{
-    font-size:12px;
-    color:var(--text-dim);
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    margin-bottom:8px;
-  }
-
-  .log{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-
-  .chip{
-    font-size:12px;
-    padding:4px 8px;
-    border-radius:4px;
-    background:var(--zero);
-    border:1px solid var(--border);
-  }
-  .chip.win1{ background:var(--one); }
-  .chip.win2{ background:var(--two); }
 </style>
 </head>
 <body>
@@ -196,9 +172,6 @@
       <p>Game over — not enough balance to spin.</p>
       <button class="reset-btn" id="resetBtn">Play again ($20)</button>
     </div>
-
-    <div class="log-title">Spin history</div>
-    <div class="log" id="log"></div>
   </div>
 </main>
 
@@ -255,22 +228,11 @@
   const spinBtn = document.getElementById('spinBtn');
   const resultLine = document.getElementById('resultLine');
   const wheelEl = document.getElementById('wheel');
-  const logEl = document.getElementById('log');
   const gameOverEl = document.getElementById('gameOver');
   const resetBtn = document.getElementById('resetBtn');
 
   function renderBalance(){
     balanceEl.textContent = '$' + balance;
-  }
-
-  function addLogChip(label){
-    const chip = document.createElement('span');
-    chip.className = 'chip' + (label === '$1' ? ' win1' : label === '$2' ? ' win2' : '');
-    chip.textContent = label;
-    logEl.prepend(chip);
-    while(logEl.children.length > 20){
-      logEl.removeChild(logEl.lastChild);
-    }
   }
 
   function checkGameOver(){
@@ -310,7 +272,6 @@
       const winAmount = parseInt(winLabel.replace('$',''), 10);
       balance += winAmount;
       renderBalance();
-      addLogChip(winLabel);
 
       resultLine.textContent = 'Result: ' + winLabel;
 
@@ -325,7 +286,6 @@
     balance = 20;
     totalRotation = totalRotation % 360;
     renderBalance();
-    logEl.innerHTML = '';
     resultLine.textContent = 'Click spin to play.';
     gameOverEl.classList.remove('show');
     spinBtn.disabled = false;
