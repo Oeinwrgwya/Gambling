@@ -125,25 +125,7 @@
     margin-bottom:20px;
   }
 
-  .gameover{
-    display:none;
-    padding:12px;
-    border:1px solid var(--border);
-    border-radius:6px;
-    margin-bottom:20px;
-  }
-  .gameover.show{ display:block; }
-  .gameover p{ margin:0 0 10px; font-size:14px; }
 
-  .reset-btn{
-    padding:8px 14px;
-    font-size:13px;
-    background:transparent;
-    border:1px solid var(--accent);
-    color:var(--accent);
-    border-radius:6px;
-    cursor:pointer;
-  }
 </style>
 </head>
 <body>
@@ -167,23 +149,18 @@
 
   <div class="info-col">
     <p class="result-line" id="resultLine">Click spin to play.</p>
-
-    <div class="gameover" id="gameOver">
-      <p>Game over — not enough balance to spin.</p>
-      <button class="reset-btn" id="resetBtn">Play again ($20)</button>
-    </div>
   </div>
 </main>
 
 <script>
 (function(){
   const CX = 100, CY = 100, R = 96;
-  const SLICES = 4;
+  const SLICES = 6;
   const SLICE_ANGLE = 360 / SLICES;
 
-  // 2x $0 (50%), 1x $1 (25%), 1x $2 (25%)
-  const OUTCOMES = ['$0','$1','$0','$2'];
-  const COLORS   = ['zero','one','zero','two'];
+  // 3x $0 (50%), 1x $1 (~16.7%), 2x $2 (~33.3%)
+  const OUTCOMES = ['$0','$1','$0','$2','$0','$2'];
+  const COLORS   = ['zero','one','zero','two','zero','two'];
   const FILL = { zero:'#7a1f2b', one:'#c9a227', two:'#f0a93a' };
   const TEXT_FILL = { zero:'#f2e9d8', one:'#0e3b2e', two:'#0e3b2e' };
 
@@ -208,7 +185,7 @@
       const lp = pt(center, R*0.6);
       markup += `<text x="${lp.x.toFixed(2)}" y="${lp.y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle"
                   font-family="system-ui, sans-serif" font-weight="700" font-size="16"
-                  fill="${TEXT_FILL[COLORS[i]]}">${OUTCOMES[i]}</text>`;
+                  fill="${TEXT_FILL[COLORS[i]]}" transform="rotate(${center.toFixed(2)} ${lp.x.toFixed(2)} ${lp.y.toFixed(2)})">${OUTCOMES[i]}</text>`;
     }
 
     markup += `<circle cx="${CX}" cy="${CY}" r="6" fill="#c9a227"/>`;
@@ -228,8 +205,6 @@
   const spinBtn = document.getElementById('spinBtn');
   const resultLine = document.getElementById('resultLine');
   const wheelEl = document.getElementById('wheel');
-  const gameOverEl = document.getElementById('gameOver');
-  const resetBtn = document.getElementById('resetBtn');
 
   function renderBalance(){
     balanceEl.textContent = '$' + balance;
@@ -238,8 +213,6 @@
   function checkGameOver(){
     if(balance < COST){
       spinBtn.disabled = true;
-      gameOverEl.classList.add('show');
-      resultLine.textContent = 'Not enough balance to spin.';
     }
   }
 
@@ -282,17 +255,7 @@
     wheelEl.addEventListener('transitionend', onEnd);
   }
 
-  function resetGame(){
-    balance = 20;
-    totalRotation = totalRotation % 360;
-    renderBalance();
-    resultLine.textContent = 'Click spin to play.';
-    gameOverEl.classList.remove('show');
-    spinBtn.disabled = false;
-  }
-
   spinBtn.addEventListener('click', spin);
-  resetBtn.addEventListener('click', resetGame);
 
   renderBalance();
 })();
