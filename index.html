@@ -176,12 +176,12 @@
 <script>
 (function(){
   const CX = 100, CY = 100, R = 96;
-  const SLICES = 6;
+  const SLICES = 8;
   const SLICE_ANGLE = 360 / SLICES;
 
-  // 3x $0 (50%), 1x $1 (~16.7%), 1x $2 (~16.7%), 1x $3 (~16.7%)
+  // 4x $0 (50%), 2x $1 (25%), 2x $2 (25%)
   const OUTCOMES = ['$0','$2','$0','$1','$0','$2','$0','$1'];
-  const COLORS   = ['zero','one','zero','one','zero','one'];
+  const COLORS   = ['zero','two','zero','one','zero','two','zero','one'];
   const FILL = { zero:'#7a1f2b', one:'#c9a227', two:'#f0a93a' };
   const TEXT_FILL = { zero:'#f2e9d8', one:'#0e3b2e', two:'#0e3b2e' };
 
