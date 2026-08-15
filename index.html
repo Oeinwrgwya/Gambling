@@ -41,6 +41,9 @@
   }
 
   .balance-box{
+    display:flex;
+    align-items:center;
+    gap:12px;
     text-align:right;
   }
 
@@ -54,6 +57,22 @@
   .balance-amount{
     font-size:24px;
     font-weight:700;
+  }
+
+  .Sell-a-Kidney-btn{
+    display:none;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:#0e3b2e;
+    background:var(--two);
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+  }
+
+  .Sell-a-Kidney-btn.show{
+    display:inline-block;
   }
 
   main{
@@ -125,7 +144,6 @@
     margin-bottom:20px;
   }
 
-
 </style>
 </head>
 <body>
@@ -133,8 +151,11 @@
 <header>
   <h1>Wheel of Depression</h1>
   <div class="balance-box">
-    <div class="balance-label">Balance</div>
-    <div class="balance-amount" id="balance">$20</div>
+    <button class="Sell-a-Kidney-btn" id="SellaKidneyBtn">Sell a Kidney</button>
+    <div>
+      <div class="balance-label">Balance</div>
+      <div class="balance-amount" id="balance">$20</div>
+    </div>
   </div>
 </header>
 
@@ -205,9 +226,11 @@
   const spinBtn = document.getElementById('spinBtn');
   const resultLine = document.getElementById('resultLine');
   const wheelEl = document.getElementById('wheel');
+  const SellaKidneyBtn = document.getElementById('SellaKidneyBtn');
 
   function renderBalance(){
     balanceEl.textContent = '$' + balance;
+    SellaKidneyBtn.classList.toggle('show', balance === 0);
   }
 
   function checkGameOver(){
@@ -255,7 +278,14 @@
     wheelEl.addEventListener('transitionend', onEnd);
   }
 
+  function aKidney.(){
+    balance = 4000;
+    renderBalance();
+    spinBtn.disabled = false;
+  }
+
   spinBtn.addEventListener('click', spin);
+  SellaKidneyBtn.addEventListener('click', SellaKidney);
 
   renderBalance();
 })();
