@@ -109,7 +109,7 @@
     z-index:2;
   }
 
-  #wheel{
+  #wheel, #wheel2{
     width:100%;
     height:100%;
     display:block;
@@ -131,6 +131,29 @@
   .spin-btn:disabled{
     background:#a3a3a3;
     cursor:not-allowed;
+  }
+
+  .unlock-btn{
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--bg);
+    background:var(--accent);
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+
+  .wheel-col2{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+
+  .wheel-col2.show{
+    display:flex;
   }
 
   .info-col{
@@ -170,12 +193,24 @@
 
   <div class="info-col">
     <p class="result-line" id="resultLine">Click spin to play.</p>
+    <button class="unlock-btn" id="unlockBtn">$40</button>
+  </div>
+
+  <div class="wheel-col2" id="wheelCol2">
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <svg id="wheel2" viewBox="0 0 200 200"></svg>
+    </div>
+    <button class="spin-btn" id="spinBtn2">Spin $5</button>
+    <p class="result-line" id="resultLine2">Click spin to play.</p>
   </div>
 </main>
 
 <script>
 (function(){
   const CX = 100, CY = 100, R = 96;
+
+  // ---- first wheel ----
   const SLICES = 8;
   const SLICE_ANGLE = 360 / SLICES;
 
@@ -190,23 +225,23 @@
     return { x: CX + radius * Math.cos(rad), y: CY + radius * Math.sin(rad) };
   }
 
-  function buildWheel(){
-    const svg = document.getElementById('wheel');
+  function buildWheelInto(svgId, slices, sliceAngle, outcomes, colors, fill, textFill){
+    const svg = document.getElementById(svgId);
     let markup = '';
 
-    for(let i=0;i<SLICES;i++){
-      const start = i * SLICE_ANGLE;
-      const end = start + SLICE_ANGLE;
+    for(let i=0;i<slices;i++){
+      const start = i * sliceAngle;
+      const end = start + sliceAngle;
       const p1 = pt(start, R);
       const p2 = pt(end, R);
       const d = `M ${CX} ${CY} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${R} ${R} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
-      markup += `<path d="${d}" fill="${FILL[COLORS[i]]}" stroke="#0e3b2e" stroke-width="1"/>`;
+      markup += `<path d="${d}" fill="${fill[colors[i]]}" stroke="#0e3b2e" stroke-width="1"/>`;
 
-      const center = start + SLICE_ANGLE/2;
+      const center = start + sliceAngle/2;
       const lp = pt(center, R*0.6);
       markup += `<text x="${lp.x.toFixed(2)}" y="${lp.y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle"
                   font-family="system-ui, sans-serif" font-weight="700" font-size="16"
-                  fill="${TEXT_FILL[COLORS[i]]}" transform="rotate(${center.toFixed(2)} ${lp.x.toFixed(2)} ${lp.y.toFixed(2)})">${OUTCOMES[i]}</text>`;
+                  fill="${textFill[colors[i]]}" transform="rotate(${center.toFixed(2)} ${lp.x.toFixed(2)} ${lp.y.toFixed(2)})">${outcomes[i]}</text>`;
     }
 
     markup += `<circle cx="${CX}" cy="${CY}" r="6" fill="#c9a227"/>`;
@@ -214,7 +249,7 @@
     svg.innerHTML = markup;
   }
 
-  buildWheel();
+  buildWheelInto('wheel', SLICES, SLICE_ANGLE, OUTCOMES, COLORS, FILL, TEXT_FILL);
 
   // game state
   let balance = 20;
@@ -288,6 +323,86 @@
   SellaKidneyBtn.addEventListener('click', sellKidney);
 
   renderBalance();
+
+  // ---- second wheel ----
+  const SLICES2 = 8;
+  const SLICE_ANGLE2 = 360 / SLICES2;
+  const UNLOCK_COST = 40;
+  const COST2 = 5;
+
+  // 2x $0 (25%), 2x $3 (25%), 2x $6 (25%), 2x $10 (25%)
+  const OUTCOMES2 = ['$0','$3','$6','$10','$0','$3','$6','$10'];
+  const COLORS2   = ['zero','three','six','ten','zero','three','six','ten'];
+  const FILL2 = { zero:'#7a1f2b', three:'#c9a227', six:'#f0a93a', ten:'#ffe38a' };
+  const TEXT_FILL2 = { zero:'#f2e9d8', three:'#0e3b2e', six:'#0e3b2e', ten:'#0e3b2e' };
+
+  buildWheelInto('wheel2', SLICES2, SLICE_ANGLE2, OUTCOMES2, COLORS2, FILL2, TEXT_FILL2);
+
+  let totalRotation2 = 0;
+  let spinning2 = false;
+
+  const unlockBtn = document.getElementById('unlockBtn');
+  const wheelCol2 = document.getElementById('wheelCol2');
+  const spinBtn2 = document.getElementById('spinBtn2');
+  const resultLine2 = document.getElementById('resultLine2');
+  const wheelEl2 = document.getElementById('wheel2');
+
+  function checkGameOver2(){
+    if(balance < COST2){
+      spinBtn2.disabled = true;
+    }
+  }
+
+  function unlockWheel2(){
+    if(balance < UNLOCK_COST) return;
+    balance -= UNLOCK_COST;
+    renderBalance();
+    wheelCol2.classList.add('show');
+    unlockBtn.style.display = 'none';
+    checkGameOver2();
+  }
+
+  function spin2(){
+    if(spinning2 || balance < COST2) return;
+    spinning2 = true;
+    spinBtn2.disabled = true;
+
+    balance -= COST2;
+    renderBalance();
+
+    const sliceIndex = Math.floor(Math.random() * SLICES2);
+    const sliceCenter = sliceIndex * SLICE_ANGLE2 + SLICE_ANGLE2/2;
+    const jitter = (Math.random() - 0.5) * (SLICE_ANGLE2 * 0.7);
+
+    const extraSpins = 6 + Math.floor(Math.random() * 3);
+    const targetMod = (360 - sliceCenter - jitter + 360) % 360;
+    let delta = targetMod - (totalRotation2 % 360);
+    if(delta <= 0) delta += 360;
+    totalRotation2 += delta + extraSpins * 360;
+
+    wheelEl2.style.transition = 'transform 3.6s cubic-bezier(0.12, 0.67, 0.1, 0.99)';
+    wheelEl2.style.transform = `rotate(${totalRotation2}deg)`;
+
+    resultLine2.textContent = 'Spinning…';
+
+    const onEnd2 = function(){
+      wheelEl2.removeEventListener('transitionend', onEnd2);
+      const winLabel = OUTCOMES2[sliceIndex];
+      const winAmount = parseInt(winLabel.replace('$',''), 10);
+      balance += winAmount;
+      renderBalance();
+
+      resultLine2.textContent = 'Result: ' + winLabel;
+
+      spinning2 = false;
+      spinBtn2.disabled = false;
+      checkGameOver2();
+    };
+    wheelEl2.addEventListener('transitionend', onEnd2);
+  }
+
+  unlockBtn.addEventListener('click', unlockWheel2);
+  spinBtn2.addEventListener('click', spin2);
 })();
 </script>
 
