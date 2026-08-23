@@ -88,7 +88,7 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:16px;
+    gap:8px;
   }
 
   .wheel-wrap{
@@ -134,8 +134,12 @@
   }
 
   .unlock-btn{
-    padding:8px 14px;
-    font-size:13px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    padding:10px 18px;
+    font-size:14px;
     font-weight:600;
     color:var(--bg);
     background:var(--accent);
@@ -143,18 +147,15 @@
     border-radius:6px;
     cursor:pointer;
     white-space:nowrap;
+    z-index:3;
   }
 
   .wheel-col2{
-    display:none;
+    display:flex;
     flex-direction:column;
     align-items:center;
-    gap:16px;
-    margin-left:-60px;
-  }
-
-  .wheel-col2.show{
-    display:flex;
+    gap:8px;
+    margin-left:-25px;
   }
 
   .info-col{
@@ -165,7 +166,7 @@
   .result-line{
     font-size:14px;
     min-height:20px;
-    margin-bottom:20px;
+    margin-bottom:0;
   }
 
 </style>
@@ -190,20 +191,17 @@
       <svg id="wheel" viewBox="0 0 200 200"></svg>
     </div>
     <button class="spin-btn" id="spinBtn">Spin $1</button>
-  </div>
-
-  <div class="info-col">
     <p class="result-line" id="resultLine">Click spin to play.</p>
-    <button class="unlock-btn" id="unlockBtn">$40</button>
   </div>
 
   <div class="wheel-col2" id="wheelCol2">
     <div class="wheel-wrap">
-      <div class="pointer"></div>
-      <svg id="wheel2" viewBox="0 0 200 200"></svg>
+      <div class="pointer" id="pointer2" style="display:none;"></div>
+      <svg id="wheel2" viewBox="0 0 200 200" style="display:none;"></svg>
+      <button class="unlock-btn" id="unlockBtn">$40</button>
     </div>
-    <button class="spin-btn" id="spinBtn2">Spin $5</button>
-    <p class="result-line" id="resultLine2">Click spin to play.</p>
+    <button class="spin-btn" id="spinBtn2" style="display:none;">Spin $5</button>
+    <p class="result-line" id="resultLine2"></p>
   </div>
 </main>
 
@@ -343,7 +341,7 @@
   let spinning2 = false;
 
   const unlockBtn = document.getElementById('unlockBtn');
-  const wheelCol2 = document.getElementById('wheelCol2');
+  const pointer2 = document.getElementById('pointer2');
   const spinBtn2 = document.getElementById('spinBtn2');
   const resultLine2 = document.getElementById('resultLine2');
   const wheelEl2 = document.getElementById('wheel2');
@@ -358,8 +356,11 @@
     if(balance < UNLOCK_COST) return;
     balance -= UNLOCK_COST;
     renderBalance();
-    wheelCol2.classList.add('show');
     unlockBtn.style.display = 'none';
+    pointer2.style.display = '';
+    wheelEl2.style.display = '';
+    spinBtn2.style.display = '';
+    resultLine2.textContent = 'Click spin to play.';
     checkGameOver2();
   }
 
