@@ -1,412 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheel of Depression</title>
-<style>
-  :root{
-    --bg:#0e3b2e;
-    --panel:#123f30;
-    --border:#c9a227;
-    --text:#f2e9d8;
-    --text-dim:#c9bfa9;
-    --accent:#c9a227;
-    --zero:#7a1f2b;
-    --one:#c9a227;
-    --two:#f0a93a;
-  }
+#include <SFML/Graphics.hpp> // biblioteka SFML - okno, grafika, rysowanie ksztaltow
+#include <cmath>             // funkcja sin() potrzebna do animacji machania nogami
 
-  *{box-sizing:border-box;}
+int main()
+{
+    // ===== OKNO =====
+    // Tworzy okno gry o rozmiarze 800x600 pikseli z tytulem
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Kulka z nogami");
+    window.setFramerateLimit(60); // ogranicza liczbe klatek na sekunde do 60 (plynna animacja, mniejsze zuzycie CPU)
 
-  body{
-    margin:0;
-    min-height:100vh;
-    background:var(--bg);
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    color:var(--text);
-  }
+    // ===== PODLOZE (brazowy prostokat) =====
+    // Prostokat o szerokosci calego okna (800) i wysokosci 100, ustawiony na dole ekranu
+    sf::RectangleShape ground(sf::Vector2f(800.f, 100.f));
+    ground.setPosition(0.f, 500.f);          // pozycja lewego-gornego rogu prostokata (x=0, y=500 -> dolna czesc okna)
+    ground.setFillColor(sf::Color(139, 69, 19)); // kolor brazowy (RGB)
 
-  header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:16px 24px;
-    border-bottom:1px solid var(--border);
-  }
+    // ===== KULKA (cialo postaci) =====
+    float ballRadius = 30.f;
+    sf::CircleShape ball(ballRadius);
+    ball.setOrigin(ballRadius, ballRadius);  // punkt odniesienia to srodek kulki (a nie lewy-gorny rog)
+    ball.setFillColor(sf::Color::White);     // kolor kulki
+    sf::Vector2f ballCenter(400.f, 470.f);   // srodek kulki: na srodku okna w poziomie, tuz nad podlozem
+    ball.setPosition(ballCenter);
 
-  h1{
-    font-size:20px;
-    margin:0;
-  }
+    // ===== NOGI (dwie linie) =====
+    // Kazda noga to VertexArray z 2 punktami (poczatek i koniec linii)
+    sf::VertexArray leftLeg(sf::Lines, 2);
+    sf::VertexArray rightLeg(sf::Lines, 2);
+    leftLeg[0].color = sf::Color::Black;
+    leftLeg[1].color = sf::Color::Black;
+    rightLeg[0].color = sf::Color::Black;
+    rightLeg[1].color = sf::Color::Black;
 
-  .balance-box{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    text-align:right;
-  }
+    // ===== PARAMETRY ANIMACJI =====
+    float legLength = 40.f;   // dlugosc nog (w pikselach)
+    float time = 0.f;         // licznik czasu, rosnie z kazda klatka - napedza animacje
+    float swingSpeed = 4.f;   // jak szybko nogi maszeruja na boki
+    float swingRange = 25.f;  // jak daleko (w pikselach) nogi wychylaja sie od srodka
 
-  .balance-label{
-    font-size:12px;
-    color:var(--text-dim);
-    text-transform:uppercase;
-    letter-spacing:.05em;
-  }
+    sf::Clock clock; // mierzy czas miedzy kolejnymi klatkami (delta time)
 
-  .balance-amount{
-    font-size:24px;
-    font-weight:700;
-  }
+    // ===== GLOWNA PETLA GRY =====
+    // Wykonuje sie w kolko az uzytkownik zamknie okno
+    while (window.isOpen())
+    {
+        // --- Obsluga zdarzen (np. zamkniecie okna) ---
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
 
-  .Sell-a-Kidney-btn{
-    display:none;
-    padding:8px 14px;
-    font-size:13px;
-    font-weight:600;
-    color:#0e3b2e;
-    background:var(--two);
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-  }
+        // --- Aktualizacja czasu ---
+        float dt = clock.restart().asSeconds(); // czas jaki uplynal od poprzedniej klatki
+        time += dt;                              // sumujemy czas, zeby animacja plynela rownomiernie
 
-  .Sell-a-Kidney-btn.show{
-    display:inline-block;
-  }
+        // --- Obliczenie wychylenia nog na boki ---
+        // sin() daje plynna, powtarzajaca sie wartosc od -1 do 1, mnozymy przez swingRange
+        float swing = std::sin(time * swingSpeed) * swingRange;
 
-  main{
-    display:flex;
-    gap:40px;
-    padding:32px 24px;
-    max-width:900px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-  }
+        // Punkt, z ktorego "wyrastaja" nogi - dol kulki
+        sf::Vector2f hipPoint = ballCenter + sf::Vector2f(0.f, ballRadius - 5.f);
 
-  .wheel-col{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-  }
+        // Lewa noga: koniec linii przesuwa sie wg wartosci "swing"
+        leftLeg[0].position = hipPoint;
+        leftLeg[1].position = hipPoint + sf::Vector2f(-10.f + swing, legLength);
 
-  .wheel-wrap{
-    position:relative;
-    width:220px;
-    height:220px;
-  }
+        // Prawa noga: przeciwna faza (kiedy lewa idzie w prawo, prawa idzie w lewo - jak przy chodzeniu)
+        rightLeg[0].position = hipPoint;
+        rightLeg[1].position = hipPoint + sf::Vector2f(10.f - swing, legLength);
 
-  .pointer{
-    position:absolute;
-    top:-4px;
-    left:50%;
-    transform:translateX(-50%);
-    width:0; height:0;
-    border-left:9px solid transparent;
-    border-right:9px solid transparent;
-    border-top:14px solid var(--accent);
-    z-index:2;
-  }
-
-  #wheel, #wheel2{
-    width:100%;
-    height:100%;
-    display:block;
-    border-radius:50%;
-    border:2px solid var(--border);
-  }
-
-  .spin-btn{
-    padding:10px 20px;
-    font-size:14px;
-    font-weight:600;
-    color:#0e3b2e;
-    background:var(--accent);
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-  }
-
-  .spin-btn:disabled{
-    background:#a3a3a3;
-    cursor:not-allowed;
-  }
-
-  .unlock-btn{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    padding:10px 18px;
-    font-size:14px;
-    font-weight:600;
-    color:var(--bg);
-    background:var(--accent);
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    white-space:nowrap;
-    z-index:3;
-  }
-
-  .wheel-col2{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-    margin-left:5px;
-  }
-
-  .info-col{
-    flex:1;
-    min-width:220px;
-  }
-
-  .result-line{
-    font-size:14px;
-    min-height:20px;
-    margin-bottom:0;
-  }
-
-</style>
-</head>
-<body>
-
-<header>
-  <h1>Wheel of Depression</h1>
-  <div class="balance-box">
-    <button class="Sell-a-Kidney-btn" id="SellaKidneyBtn">Sell a Kidney</button>
-    <div>
-      <div class="balance-label">Balance</div>
-      <div class="balance-amount" id="balance">$60</div>
-    </div>
-  </div>
-</header>
-
-<main>
-  <div class="wheel-col">
-    <div class="wheel-wrap">
-      <div class="pointer"></div>
-      <svg id="wheel" viewBox="0 0 200 200"></svg>
-    </div>
-    <button class="spin-btn" id="spinBtn">Spin $1</button>
-    <p class="result-line" id="resultLine">Click spin to play.</p>
-  </div>
-
-  <div class="wheel-col2" id="wheelCol2">
-    <div class="wheel-wrap">
-      <div class="pointer" id="pointer2" style="display:none;"></div>
-      <svg id="wheel2" viewBox="0 0 200 200" style="display:none;"></svg>
-      <button class="unlock-btn" id="unlockBtn">$40</button>
-    </div>
-    <button class="spin-btn" id="spinBtn2" style="display:none;">Spin $5</button>
-    <p class="result-line" id="resultLine2"></p>
-  </div>
-</main>
-
-<script>
-(function(){
-  const CX = 100, CY = 100, R = 96;
-
-  // ---- first wheel ----
-  const SLICES = 8;
-  const SLICE_ANGLE = 360 / SLICES;
-
-  // 4x $0 (50%), 2x $1 (25%), 2x $2 (25%)
-  const OUTCOMES = ['$0','$2','$0','$1','$0','$2','$0','$1'];
-  const COLORS   = ['zero','one','zero','one','zero','one','zero','one'];
-  const FILL = { zero:'#7a1f2b', one:'#c9a227', two:'#f0a93a' };
-  const TEXT_FILL = { zero:'#f2e9d8', one:'#0e3b2e', two:'#0e3b2e' };
-
-  function pt(angleDeg, radius){
-    const rad = (angleDeg - 90) * Math.PI / 180; // 0deg = top, clockwise
-    return { x: CX + radius * Math.cos(rad), y: CY + radius * Math.sin(rad) };
-  }
-
-  function buildWheelInto(svgId, slices, sliceAngle, outcomes, colors, fill, textFill){
-    const svg = document.getElementById(svgId);
-    let markup = '';
-
-    for(let i=0;i<slices;i++){
-      const start = i * sliceAngle;
-      const end = start + sliceAngle;
-      const p1 = pt(start, R);
-      const p2 = pt(end, R);
-      const d = `M ${CX} ${CY} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${R} ${R} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
-      markup += `<path d="${d}" fill="${fill[colors[i]]}" stroke="#0e3b2e" stroke-width="1"/>`;
-
-      const center = start + sliceAngle/2;
-      const lp = pt(center, R*0.6);
-      markup += `<text x="${lp.x.toFixed(2)}" y="${lp.y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle"
-                  font-family="system-ui, sans-serif" font-weight="700" font-size="16"
-                  fill="${textFill[colors[i]]}" transform="rotate(${center.toFixed(2)} ${lp.x.toFixed(2)} ${lp.y.toFixed(2)})">${outcomes[i]}</text>`;
+        // --- Rysowanie calej sceny ---
+        window.clear(sf::Color(100, 180, 255)); // wypelnia tlo kolorem niebieskim
+        window.draw(ground);                    // rysuje brazowe podloze
+        window.draw(leftLeg);                   // rysuje lewa noge
+        window.draw(rightLeg);                  // rysuje prawa noge
+        window.draw(ball);                      // rysuje kulke (na wierzchu)
+        window.display();                       // pokazuje narysowana klatke na ekranie
     }
 
-    markup += `<circle cx="${CX}" cy="${CY}" r="6" fill="#c9a227"/>`;
-
-    svg.innerHTML = markup;
-  }
-
-  buildWheelInto('wheel', SLICES, SLICE_ANGLE, OUTCOMES, COLORS, FILL, TEXT_FILL);
-
-  // game state
-  let balance = 60;
-  let totalRotation = 0;
-  let spinning = false;
-  const COST = 1;
-
-  const balanceEl = document.getElementById('balance');
-  const spinBtn = document.getElementById('spinBtn');
-  const resultLine = document.getElementById('resultLine');
-  const wheelEl = document.getElementById('wheel');
-  const SellaKidneyBtn = document.getElementById('SellaKidneyBtn');
-
-  function renderBalance(){
-    balanceEl.textContent = '$' + balance;
-    SellaKidneyBtn.classList.toggle('show', balance === 0);
-  }
-
-  function checkGameOver(){
-    if(balance < COST){
-      spinBtn.disabled = true;
-    }
-  }
-
-  function spin(){
-    if(spinning || balance < COST) return;
-    spinning = true;
-    spinBtn.disabled = true;
-
-    balance -= COST;
-    renderBalance();
-
-    const sliceIndex = Math.floor(Math.random() * SLICES);
-    const sliceCenter = sliceIndex * SLICE_ANGLE + SLICE_ANGLE/2;
-    const jitter = (Math.random() - 0.5) * (SLICE_ANGLE * 0.7);
-
-    const extraSpins = 6 + Math.floor(Math.random() * 3);
-    const targetMod = (360 - sliceCenter - jitter + 360) % 360;
-    let delta = targetMod - (totalRotation % 360);
-    if(delta <= 0) delta += 360;
-    totalRotation += delta + extraSpins * 360;
-
-    wheelEl.style.transition = 'transform 3.6s cubic-bezier(0.12, 0.67, 0.1, 0.99)';
-    wheelEl.style.transform = `rotate(${totalRotation}deg)`;
-
-    resultLine.textContent = 'Spinning…';
-
-    const onEnd = function(){
-      wheelEl.removeEventListener('transitionend', onEnd);
-      const winLabel = OUTCOMES[sliceIndex];
-      const winAmount = parseInt(winLabel.replace('$',''), 10);
-      balance += winAmount;
-      renderBalance();
-
-      resultLine.textContent = 'Result: ' + winLabel;
-
-      spinning = false;
-      spinBtn.disabled = false;
-      checkGameOver();
-    };
-    wheelEl.addEventListener('transitionend', onEnd);
-  }
-
-  function sellKidney(){
-    balance = 4000;
-    renderBalance();
-    spinBtn.disabled = false;
-  }
-
-  spinBtn.addEventListener('click', spin);
-  SellaKidneyBtn.addEventListener('click', sellKidney);
-
-  renderBalance();
-
-  // ---- second wheel ----
-  const SLICES2 = 8;
-  const SLICE_ANGLE2 = 360 / SLICES2;
-  const UNLOCK_COST = 40;
-  const COST2 = 5;
-
-  // 2x $0 (25%), 2x $3 (25%), 2x $6 (25%), 2x $10 (25%)
-  const OUTCOMES2 = ['$0','$3','$6','$10','$0','$3','$6','$10'];
-  const COLORS2   = ['zero','three','six','ten','zero','three','six','ten'];
-  const FILL2 = { zero:'#7a1f2b', three:'#c9a227', six:'#f0a93a', ten:'#ffe38a' };
-  const TEXT_FILL2 = { zero:'#f2e9d8', three:'#0e3b2e', six:'#0e3b2e', ten:'#0e3b2e' };
-
-  buildWheelInto('wheel2', SLICES2, SLICE_ANGLE2, OUTCOMES2, COLORS2, FILL2, TEXT_FILL2);
-
-  let totalRotation2 = 0;
-  let spinning2 = false;
-
-  const unlockBtn = document.getElementById('unlockBtn');
-  const pointer2 = document.getElementById('pointer2');
-  const spinBtn2 = document.getElementById('spinBtn2');
-  const resultLine2 = document.getElementById('resultLine2');
-  const wheelEl2 = document.getElementById('wheel2');
-
-  function checkGameOver2(){
-    if(balance < COST2){
-      spinBtn2.disabled = true;
-    }
-  }
-
-  function unlockWheel2(){
-    if(balance < UNLOCK_COST) return;
-    balance -= UNLOCK_COST;
-    renderBalance();
-    unlockBtn.style.display = 'none';
-    pointer2.style.display = '';
-    wheelEl2.style.display = '';
-    spinBtn2.style.display = '';
-    resultLine2.textContent = 'Click spin to play.';
-    checkGameOver2();
-  }
-
-  function spin2(){
-    if(spinning2 || balance < COST2) return;
-    spinning2 = true;
-    spinBtn2.disabled = true;
-
-    balance -= COST2;
-    renderBalance();
-
-    const sliceIndex = Math.floor(Math.random() * SLICES2);
-    const sliceCenter = sliceIndex * SLICE_ANGLE2 + SLICE_ANGLE2/2;
-    const jitter = (Math.random() - 0.5) * (SLICE_ANGLE2 * 0.7);
-
-    const extraSpins = 6 + Math.floor(Math.random() * 3);
-    const targetMod = (360 - sliceCenter - jitter + 360) % 360;
-    let delta = targetMod - (totalRotation2 % 360);
-    if(delta <= 0) delta += 360;
-    totalRotation2 += delta + extraSpins * 360;
-
-    wheelEl2.style.transition = 'transform 3.6s cubic-bezier(0.12, 0.67, 0.1, 0.99)';
-    wheelEl2.style.transform = `rotate(${totalRotation2}deg)`;
-
-    resultLine2.textContent = 'Spinning…';
-
-    const onEnd2 = function(){
-      wheelEl2.removeEventListener('transitionend', onEnd2);
-      const winLabel = OUTCOMES2[sliceIndex];
-      const winAmount = parseInt(winLabel.replace('$',''), 10);
-      balance += winAmount;
-      renderBalance();
-
-      resultLine2.textContent = 'Result: ' + winLabel;
-
-      spinning2 = false;
-      spinBtn2.disabled = false;
-      checkGameOver2();
-    };
-    wheelEl2.addEventListener('transitionend', onEnd2);
-  }
-
-  unlockBtn.addEventListener('click', unlockWheel2);
-  spinBtn2.addEventListener('click', spin2);
-})();
-</script>
-
-</body>
-</html>
+    return 0;
+}
